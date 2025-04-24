@@ -1,0 +1,79 @@
+
+combined_heldout_crispr_file: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/Combined_Sceptre_Fixed_FDR_01/CRISPR_Comparison/resources/Data/Every_Validation_Dataset_All_Cell_Types.tsv"
+
+datasets:
+  K562_DC_TAP:
+    dge: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/DC_TAP/CRISPRiScreen_w_Sceptre/resources/DC_TAP/dge.txt.gz"
+    pert: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/DC_TAP/CRISPRiScreen_w_Sceptre/resources/DC_TAP/Sceptre/raw_perturb_status.txt.gz"
+    guides: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/DC_TAP/CRISPRiScreen_w_Sceptre/resources/DC_TAP/Sceptre/gRNA_groups_table.txt"
+    cell_meta: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/DC_TAP/CRISPRiScreen_w_Sceptre/resources/DC_TAP/metadata.tsv.gz"
+    genome: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/DC_TAP/CRISPRiScreen_w_Sceptre/resources/gencode.v29lift37.annotation.gtf.gz"
+    guide_assignment_method: "thresholding"
+    guide_threshold: 5
+    moi: "high"
+    side: "left"
+    grna_integration_strategy: "union"
+    cis_results: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/DC_TAP/CRISPRiScreen_w_Sceptre/results/DC_TAP/sceptre_diff_expr/discovery_result.txt"
+    encode_file: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/Combined_Sceptre_Fixed_FDR_01/ENCODE_CRISPR_data/results/ENCODE/ENCODE_TAPSeq_0.13gStd_MAST_perCRE_hg19.tsv.gz"
+    ep_benchmarking_file: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/Combined_Sceptre_Fixed_FDR_01/CRISPR_Comparison/resources/Data/EPCrisprBenchmark_TAPSeq_0.13gStd_0.8pwrAt15effect_GRCh38_wo_Train_Pairs.tsv"
+    dist_filter: 250000
+  Klann:
+    dge: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/Klann/CRISPRiScreen_w_Sceptre/resources/Klann/dge.txt.gz"
+    pert: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/Klann/CRISPRiScreen_w_Sceptre/resources/Klann/Sceptre/raw_perturb_status.txt.gz"
+    guides: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/Klann/CRISPRiScreen_w_Sceptre/resources/Klann/Sceptre/gRNA_groups_table.txt"
+    cell_meta: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/Klann/CRISPRiScreen_w_Sceptre/resources/Klann/metadata.tsv.gz"
+    genome: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/Klann/CRISPRiScreen_w_Sceptre/resources/gencode.v29.annotation.gtf.gz"
+    guide_assignment_method: "mixture"
+    guide_threshold: Null
+    moi: "high"
+    side: "left"
+    grna_integration_strategy: "union"
+    cis_results: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/Klann/CRISPRiScreen_w_Sceptre/results/Klann/sceptre_diff_expr/discovery_result.txt"
+    encode_file: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/Combined_Sceptre_Fixed_FDR_01/ENCODE_CRISPR_data/results/ENCODE/ENCODE_Klann_0.13gStd_MAST_perCRE_GRCh38.tsv.gz"
+    ep_benchmarking_file: Null
+    dist_filter: 250000
+  Xie:
+    dge: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/Xie/CRISPRiScreen_w_Sceptre/resources/Xie/dge.txt.gz"
+    pert: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/Xie/CRISPRiScreen_w_Sceptre/resources/Xie/Sceptre/raw_perturb_status.txt.gz"
+    guides: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/Xie/CRISPRiScreen_w_Sceptre/resources/Xie/Sceptre/gRNA_groups_table.txt"
+    cell_meta: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/Xie/CRISPRiScreen_w_Sceptre/resources/Xie/metadata.tsv.gz"
+    genome: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/Xie/CRISPRiScreen_w_Sceptre/resources/gencode.v29.annotation.gtf.gz"
+    guide_assignment_method: "mixture"
+    guide_threshold: Null
+    moi: "high"
+    side: "left"
+    grna_integration_strategy: "union"
+    cis_results: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/Xie/CRISPRiScreen_w_Sceptre/results/Xie/sceptre_diff_expr/discovery_result.txt"
+    encode_file: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/Combined_Sceptre_Fixed_FDR_01/ENCODE_CRISPR_data/results/ENCODE/ENCODE_Xie_0.13gStd_MAST_perCRE_GRCh38.tsv.gz"
+    ep_benchmarking_file: Null
+    dist_filter: 250000
+  Morrisv1:
+    dge: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/Morrisv1/CRISPRiScreen_w_Sceptre/resources/Morrisv1/dge.txt.gz"
+    pert: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/Morrisv1/CRISPRiScreen_w_Sceptre/resources/Morrisv1/Sceptre/raw_perturb_status.txt.gz"
+    guides: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/Morrisv1/CRISPRiScreen_w_Sceptre/resources/Morrisv1/Sceptre/gRNA_groups_table.txt"
+    cell_meta: Null
+    genome: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/Morrisv1/CRISPRiScreen_w_Sceptre/resources/gencode.v29.annotation.gtf.gz"
+    guide_assignment_method: "mixture"
+    guide_threshold: Null
+    moi: "high"
+    side: "left"
+    grna_integration_strategy: "union"
+    cis_results: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/Morrisv1/CRISPRiScreen_w_Sceptre/results/Morrisv1/sceptre_diff_expr/discovery_result.txt"
+    encode_file: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/Combined_Sceptre_Fixed_FDR_01/ENCODE_CRISPR_data/results/ENCODE/ENCODE_Morrisv1_0.13gStd_MAST_perCRE_GRCh38.tsv.gz"
+    ep_benchmarking_file: Null
+    dist_filter: 250000
+  Morrisv2:
+    dge: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/Morrisv2/CRISPRiScreen_w_Sceptre/resources/Morrisv2/dge.txt.gz"
+    pert: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/Morrisv2/CRISPRiScreen_w_Sceptre/resources/Morrisv2/Sceptre/raw_perturb_status.txt.gz"
+    guides: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/Morrisv2/CRISPRiScreen_w_Sceptre/resources/Morrisv2/Sceptre/gRNA_groups_table.txt"
+    cell_meta: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/Morrisv2/CRISPRiScreen_w_Sceptre/resources/Morrisv2/metadata.tsv.gz"
+    genome: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/Morrisv2/CRISPRiScreen_w_Sceptre/resources/gencode.v29.annotation.gtf.gz"
+    guide_assignment_method: "mixture"
+    guide_threshold: Null
+    moi: "high"
+    side: "left"
+    grna_integration_strategy: "union" 
+    cis_results: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/Morrisv2/CRISPRiScreen_w_Sceptre/results/Morrisv2/sceptre_diff_expr/discovery_result.txt"
+    encode_file: "/oak/stanford/groups/engreitz/Users/jgalante/ENCODE_K562_Validation_Datasets/Combined_Sceptre_Fixed_FDR_01/ENCODE_CRISPR_data/results/ENCODE/ENCODE_Morrisv2_0.13gStd_MAST_perCRE_GRCh38.tsv.gz"
+    ep_benchmarking_file: Null
+    dist_filter: 250000

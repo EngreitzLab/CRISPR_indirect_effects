@@ -1,0 +1,107 @@
+
+configfile: "config/config.yml"
+
+# function to get metadata
+def get_cell_metadata(wildcards):
+  cell_metadata = config["datasets"][wildcards.sample]["cell_meta"]
+  if cell_metadata is None:
+    cell_metadata = []
+  return(cell_metadata)
+
+# function to get EPbecnhmarking format file
+def get_ep_benchmarking_file(wildcards):
+  ep_benchmarking_file = config["datasets"][wildcards.sample]["ep_benchmarking_file"]
+  if ep_benchmarking_file is None:
+    ep_benchmarking_file = []
+  return(ep_benchmarking_file)
+
+# perform all analyses
+rule all:
+  input:
+    expand("results/{sample}/analyze_indirect_effects.html", sample = config["datasets"]),
+#    "results/EPCrisprBenchmark_K562_combined_heldout_wo_DC-TAP_counts.tsv",
+#    "results/EPCrisprBenchmark_combined_heldout_counts.tsv"
+    
+# calculate average expression
+rule calculate_expression:
+  input: lambda wildcards: config["datasets"][wildcards.sample]["dge"]
+  output: "results/{sample}/gene_expr.csv"
+  conda: "sceptre"
+  resources:
+    mem_mb = "32000",
+  script:
+    "scripts/calculate_expression.R"
+
+# perform de tests for trans-effects
+rule perform_trans_acting_de_tests:
+  input:
+    dge = lambda wildcards: config["datasets"][wildcards.sample]["dge"],
+    pert = lambda wildcards: config["datasets"][wildcards.sample]["pert"],
+    guides = lambda wildcards: config["datasets"][wildcards.sample]["guides"],
+    genome = lambda wildcards: config["datasets"][wildcards.sample]["genome"],
+    cis_results = lambda wildcards: config["datasets"][wildcards.sample]["cis_results"],
+    encode_file = lambda wildcards: config["datasets"][wildcards.sample]["encode_file"],
+    cell_meta = get_cell_metadata
+  output: 
+    results = "results/{sample}/results_run_discovery_analysis.rds",
+    genes_per_pert = "results/{sample}/genes_per_perturbation.csv"
+  params:
+    seed = 20240909,
+    include_genes = "cis",  # one of 'cis' or 'all'
+    genes_per_pert = 100,
+    guide_assignment_method = lambda wildcards: config["datasets"][wildcards.sample]["guide_assignment_method"],
+    guide_threshold = lambda wildcards: config["datasets"][wildcards.sample]["guide_threshold"],
+    moi = lambda wildcards: config["datasets"][wildcards.sample]["moi"],
+    side = lambda wildcards: config["datasets"][wildcards.sample]["side"],
+    grna_integration_strategy = lambda wildcards: config["datasets"][wildcards.sample]["grna_integration_strategy"]
+  conda: "sceptre"
+  resources:
+    mem_mb = "128000",
+    runtime = "12h"
+  script:
+    "scripts/perform_trans_acting_de_tests.R"
+
+# analyze indirect effects
+rule analyze_indirect_effects:
+  input:
+    trans_results = "results/{sample}/results_run_discovery_analysis.rds",
+    cis_results = lambda wildcards: config["datasets"][wildcards.sample]["cis_results"],
+    encode_file = lambda wildcards: config["datasets"][wildcards.sample]["encode_file"],
+    ep_benchmarking_file = get_ep_benchmarking_file,
+    gene_univ = "/oak/stanford/groups/engreitz/Users/agschwin/distal_regulation_paper/CRISPR_benchmarks/resources/genome_annotations/CollapsedGeneBounds.hg38.TSS500bp.bed",
+    gene_expr = "results/{sample}/gene_expr.csv"
+  output: "results/{sample}/analyze_indirect_effects.html"
+  params:
+    dist_filter = lambda wildcards: config["datasets"][wildcards.sample]["dist_filter"]
+  conda: "sceptre"
+  resources:
+    mem_mb = "16000",
+    runtime = "6h"
+  script:
+    "scripts/analyze_indirect_effects.Rmd"
+    
+rule filter_combined_heldout_data:
+  input: config["combined_heldout_crispr_file"]
+  output:
+    full = "results/EPCrisprBenchmark_combined_heldout.tsv.gz",
+    filtered = "results/EPCrisprBenchmark_combined_heldout_propFilter.tsv.gz",
+    pair_counts = "results/EPCrisprBenchmark_combined_heldout_counts.tsv"
+  params:
+    dist_filter = 250000
+  conda: "sceptre"   
+  script:
+    "scripts/filter_ep_benchmarking_combined.R"    
+    
+rule filter_combined_heldout_data_k562_noTAP:
+  input: config["combined_heldout_crispr_file"]
+  output:
+    full = "results/EPCrisprBenchmark_K562_combined_heldout_wo_DC-TAP.tsv.gz",
+    filtered = "results/EPCrisprBenchmark_K562_combined_heldout_wo_DC-TAP_propFilter.tsv.gz",
+    pair_counts = "results/EPCrisprBenchmark_K562_combined_heldout_wo_DC-TAP_counts.tsv"
+  params:
+    dist_filter = 250000,
+    datasets = ["Morrisv1", "Morrisv2", "Klann", "Xie"],
+    cell_types = "K562"
+  conda: "sceptre"   
+  script:
+    "scripts/filter_ep_benchmarking_combined.R"
