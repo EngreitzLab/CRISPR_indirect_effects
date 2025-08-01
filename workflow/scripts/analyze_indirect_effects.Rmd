@@ -1,6 +1,6 @@
 ---
 title: "Plot proportion of indirect effects vs cis hit ratio"
-author: "Andreas Gschwind"
+author: "Andreas R. Gschwind"
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 output: 
   html_document:
@@ -9,17 +9,27 @@ output:
     code_folding: hide
 ---
 
+```{r setupDocument, include=FALSE}
+# save.image(paste0("analyze_", snakemake@wildcards$sample, ".rda"))
+# stop()
+
+# set output html chunk options
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+
+# set random seed
+set.seed(snakemake@params$seed)
+```
+
 ## Goal
 Calculate indirect effects positive ratio and compare to cis-effect positive ratio as a function of
 distance to TSS.
-
 ```{r requiredPackages, warning=FALSE, message=FALSE}
-# save.image(paste0("analyze_", snakemake@wildcards$sample, ".rda"))
-# stop()
 library(tidyverse)
 library(data.table)
 library(Matrix)
 ```
+
+***
 
 ## Used data
 Results from differential expression tests for trans-acting effects are used to estimate the
@@ -30,19 +40,16 @@ proportion of direct cis effects from main differential expression results.
 trans_results <- readRDS(snakemake@input$trans_results)
 
 # load cis effects results from previous run
-cis_results <- read_tsv(snakemake@input$cis_results, show_col_types = FALSE)
+cis_results <- read_csv(snakemake@input$cis_results, show_col_types = FALSE)
 
-# load processed ENCODE format results including filters
-encode_results <- read_tsv(snakemake@input$encode_file, show_col_types = FALSE)
-
-# load gene universe file
+# load gene universe file and gene expression data
 gene_univ <- read_tsv(snakemake@input$gene_univ, show_col_types = FALSE)
-
-# load gene expression data
 gene_expr <- read_csv(snakemake@input$gene_expr, show_col_types = FALSE)
 ```
 
-## Define significan trans-acting effects
+***
+
+## Define significant trans-acting effects
 Define significant trans effects by applying the same p-value threshold as for the cis effects.
 ```{r}
 # significance threshold for cis effects
@@ -55,77 +62,63 @@ pval_threshold_cis <- cis_results %>%
 trans_results <- trans_results %>% 
   mutate(significant = p_value <= pval_threshold_cis,
          regulated = significant & log_2_fold_change < 0)
+
+# add regulated column to cis results
+cis_results <- cis_results %>% 
+  mutate(regulated = significant & log_2_fold_change < 0)
 ```
+
+***
 
 ## Filter data
 Filter trans and cis effects based on ValidConnection in ENCODE format data. For trans effects, any
 perturbations that are TSS controls or overlap potential promoters are removed. For cis effects,
 the same filter is applied in addition to removing any E-G pairs where the perturbation is within
 the gene body of their target genes. These filters consistent with all other ENCODE distal
-regulation analyses.
+regulation analyses, except for that the statistical power filter isn't applied.
 ```{r}
-# get gene symbol for every gene id from processed ENCODE data
-genes <- encode_results %>%
-  select(gene = measuredEnsemblID, gene_symbol = measuredGeneSymbol) %>% 
-  distinct()
+# get all valid elements from cis results
+valid_elements <- cis_results %>% 
+  filter(valid_element == TRUE) %>% 
+  pull(grna_target) %>% 
+  unique()
 
-# add gene symbols to cis results 
-cis_results <- cis_results %>% 
-  left_join(genes, by = c("response_id" = "gene")) %>% 
-  filter(!is.na(gene_symbol))
+# add a valid connection column to trans-results based on whether perturbation is a valid element
+trans_results <- mutate(trans_results, valid_connection = grna_target %in% valid_elements)
 
-# add ValidConnection column to cis results
-cis_results <- cis_results %>% 
-  mutate(name = paste0(gene_symbol, "|", grna_target, ":.")) %>% 
-  left_join(distinct(select(encode_results, name, ValidConnection)), by = "name")
-```
-
-```{r}
-# get valid enhancers only, which also removes any TSS controls
-enh_filter <- c("overlaps potential promoter", "TSS targeting guide(s)")
-valid_enh <- encode_results %>% 
-  filter(!ValidConnection %in% enh_filter) %>% 
-  pull(PerturbationTargetID)
-
-# add ValidConnection column to trans-results
-trans_results <- trans_results %>% 
-  mutate(pert_id = paste0(grna_target, ":.")) %>% 
-  mutate(ValidConnection = if_else(pert_id %in% valid_enh, true = "TRUE", false = "Invalid enhancer"))
-```
-
-```{r}
-# filter cis and trans results based on ValidConnection
-cis_results_filt <- filter(cis_results, ValidConnection == "TRUE")
-trans_results_filt <- filter(trans_results, ValidConnection == "TRUE")
+# filter cis and trans results based on whether they are valid connection for the analysis
+cis_results_filt <- filter(cis_results, valid_connection == TRUE, pass_qc == TRUE)
+trans_results_filt <- filter(trans_results, valid_connection == TRUE, pass_qc == TRUE)
 
 # only retain data on genes in distal regulation genes universe
 cis_results_filt <- filter(cis_results_filt, response_id %in% gene_univ$Ensembl_ID)
 trans_results_filt <- filter(trans_results_filt, response_id %in% gene_univ$Ensembl_ID)
 ```
 
+***
+
 ## Calculate positive ratios
 Calculate proportion of positives for both trans effects and cis effects. For the latter, the
 proportion of positives is calculates as a function of distance to TSS.
 
-Bin cis results into 50 bins based on distance to TSS and compute proportion of positives for each
+Bin cis results into 50kb bins based on distance to TSS and compute proportion of positives for each
 bin:
 ```{r}
-# add regulated columns to cis results
-cis_results_filt <- cis_results_filt %>% 
-  mutate(regulated = significant & log_2_fold_change < 0) %>% 
-  filter(!is.na(regulated))
+# distance bins for calculating positive hit ratio
+max_dist <- 1e6
+dist_bins <- seq(0, max_dist, by = 5e4)
 
 # bin cis pairs by distance
 cis_results_filt <- cis_results_filt %>% 
-  left_join(select(encode_results, name, distToTSS), by = "name") %>% 
-  filter(distToTSS <= 2e6) %>% 
-  mutate(dist_bin = cut(distToTSS, breaks = 25))
+  mutate(abs_dist_to_tss = abs(dist_to_tss)) %>% 
+  filter(abs_dist_to_tss <= max_dist) %>% 
+  mutate(dist_bin = cut(abs_dist_to_tss, breaks = dist_bins, include.lowest = TRUE))
 
 # calculate positive ratios and mean distance per distance bin
 cis_pos_ratio <- cis_results_filt %>% 
   group_by(dist_bin) %>% 
   summarize(positive_ratio = mean(regulated),
-            mean_dist = mean(distToTSS)) %>% 
+            mean_dist = mean(abs_dist_to_tss)) %>% 
   mutate(Type = "Cis-interactions")
 ```
 
@@ -136,7 +129,7 @@ chromosomes than the perturbation).
 trans_pos_ratio <- mean(trans_results_filt$regulated, na.rm = TRUE)
 
 # create mock table
-trans_pos_ratio_table <- tibble(mean_dist = c(0, 2e6),
+trans_pos_ratio_table <- tibble(mean_dist = c(0, max_dist),
        positive_ratio = trans_pos_ratio,
        Type = "Trans-interactions")
 ```
@@ -151,7 +144,7 @@ expected proportion of indirect effects.
 ```{r, fig.height=3.5, fig.width=7}
 # manually inferred distance to TSS threshold where proportion of indirect effects is same as
 # proportion of effects in cis
-dist_threshold <- snakemake@params$dist_filter
+dist_threshold <- snakemake@params$dist_threshold
 
 # plot proportion of positives as function of distance
 plot_title <- paste(snakemake@wildcards$sample, "cis vs. trans positive ratio")
@@ -159,10 +152,12 @@ ggplot(cis_pos_ratio, aes(x = mean_dist, y = positive_ratio, color = Type)) +
   geom_point() +
   geom_line(data = trans_pos_ratio_table) +
   geom_vline(xintercept = dist_threshold, color = "firebrick") +
-  labs(x = "Distance to TSS (0-2Mb, 25 bins)", y = "Proportion positives", title = plot_title) +
+  labs(x = "Distance to TSS (50kb bins)", y = "Proportion positives", title = plot_title) +
   scale_color_manual(values = c("black", "dodgerblue3")) +
   theme_bw()
 ```
+
+***
 
 ## Calculate positive ratios beyond distance threshold
 ```{r}
@@ -170,12 +165,12 @@ ggplot(cis_pos_ratio, aes(x = mean_dist, y = positive_ratio, color = Type)) +
 calc_hit_ratios_dist <- function(cis_results, trans_pos_ratio, min_dist, max_dist) {
   
   # get total number of cis-hits below max distance
-  cis_results <- filter(cis_results, distToTSS <= max_dist)
+  cis_results <- filter(cis_results, abs_dist_to_tss <= max_dist)
   total_cis_hits <- sum(cis_results$regulated)
   
   # calculate proportions of hits above min distance
   cis_results %>% 
-    filter(distToTSS > min_dist) %>% 
+    filter(abs_dist_to_tss > min_dist) %>% 
     summarize(far_cis_hits = sum(regulated),
               far_cis_pos_ratio = mean(regulated)) %>% 
     mutate(trans_pos_ratio = trans_pos_ratio,
@@ -185,21 +180,15 @@ calc_hit_ratios_dist <- function(cis_results, trans_pos_ratio, min_dist, max_dis
     mutate(prop_far_cis_hits = far_cis_hits / total_cis_hits, .after = far_cis_hits)
 }
 
-# compute overall cis-hit ratio beyond 250kb
-cis_stats_250kb_2mb <- calc_hit_ratios_dist(cis_results_filt, trans_pos_ratio = trans_pos_ratio,
-                                            min_dist = dist_threshold, max_dist = 2e6)
-
 # compute overall cis-hit ratio beyond 250kb and within 1Mb
-cis_stats_250kb_1mb <- calc_hit_ratios_dist(cis_results_filt, trans_pos_ratio = trans_pos_ratio,
-                                            min_dist = dist_threshold, max_dist = 1e6)
-
-# combine into one table
-cis_stats <- bind_rows(`2mb` = cis_stats_250kb_2mb, `1mb` = cis_stats_250kb_1mb, .id = "max_dist")
-
+cis_stats_250kb <- calc_hit_ratios_dist(cis_results_filt, trans_pos_ratio = trans_pos_ratio,
+                                        min_dist = dist_threshold, max_dist = max_dist)
 # save to table
 outfile <- file.path("results", snakemake@wildcards$sample, "indirect_effects_proportions.csv")
-write_csv(cis_stats, file = outfile)
+write_csv(cis_stats_250kb, file = outfile)
 ```
+
+***
 
 ## Compare gene expression distributions
 Compare expression distributions between genes in cis- and trans-acting pairs.
@@ -228,47 +217,10 @@ ggplot(expr, aes(x = type, y = avg_expr, fill = type)) +
   theme(legend.position = "none")
 ```
 
-## Create filtered benchmarking dataset
-If a benchmarking dataset is available for this dataset, filter it based on distance to TSS to remove
-positives that are more likely to be indirect effects. Also remove an equal proportion of randomly
-selected negatives to maintain class balance for benchmarking.
-```{r}
-if (!is.null(snakemake@input$ep_benchmarking_file)) {
-  
-  # load dataset in EPbenchmarking format
-  crispr_file <- snakemake@input$ep_benchmarking_file
-  crispr <- read_tsv(crispr_file, show_col_types = FALSE)
-  
-  # extract original column names for later formatting
-  crispr_cols <- colnames(crispr)
-  
-  # calculate distance to TSS
-  crispr <- crispr %>%
-    mutate(distToTSS = if_else(
-      chrom == chrTSS,
-      true = abs(((chromStart + chromEnd) / 2) - ((startTSS + endTSS) / 2)),
-      false = NA_real_))
-  
-  # get all positive and negatives
-  positives <- filter(crispr, Regulated == TRUE)
-  negatives <- filter(crispr, Regulated == FALSE)
-  
-  # filter positives based on distance threshold and get proportion of filtered pairs
-  positives_filt <- filter(positives, distToTSS <= dist_threshold)
-  filt_prop <- nrow(positives_filt) / nrow(positives)
-  
-  # randomly sample an equal proportion of negatives
-  negatives_sample <- sample_n(negatives, size = round(nrow(negatives) * filt_prop))
-  
-  # combine filtered positives and sampled negatives to form output
-  crispr_prop_filt <- bind_rows(positives_filt, negatives_sample) %>% 
-    arrange(chrom, chromStart, chromEnd, measuredGeneSymbol) %>% 
-    select(all_of(crispr_cols))
-  
-  # save to output file
-  outfile <- paste0(tools::file_path_sans_ext(basename(crispr_file)), "_propFilter.tsv.gz")
-  outfile <- file.path(dirname(snakemake@input$trans_results), outfile)
-  write_tsv(crispr_prop_filt, file = outfile)
+***
 
-}
+## Session information
+This document was produced using following packages:
+```{r sessionInfo}
+sessionInfo()
 ```
