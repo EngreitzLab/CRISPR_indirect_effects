@@ -6,6 +6,8 @@ Xie2019	Xie	"Xie et al., 2019 (K562)"
 Klann2021	Klann	"Klann et al., 2021 (K562)"
 K562_DC_TAPseq	K562_DC_TAP	DC-TAP-seq (K562)
 WTC11_DC_TAPseq	WTC11_DC_TAP	DC-TAP-seq (WTC11)
+K562_DC_TAPseq_FDR20	K562_DC_TAP	DC-TAP-seq (K562)
+WTC11_DC_TAPseq_FDR20	WTC11_DC_TAP	DC-TAP-seq (WTC11)
 Morris2023_v1	NA	"Morris et al., 2023 v1 (K562)"
 Morris2023_v2	NA	"Morris et al., 2023 v2 (K562)"
 Morris2023	Morris	Others (imputed)

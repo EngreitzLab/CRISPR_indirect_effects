@@ -10,20 +10,9 @@ include: "rules/calculate_direct_vs_effects.smk"
 rule all:
   input:
     expand("results/{sample}/analyze_indirect_effects.html", sample = config["datasets"]),
-    expand("results/{type}_positive_hit_rates.tsv", type = ["cis", "trans"]),
-    expand("results/annotated_crispr_data/EPCrisprBenchmark_{dataset}_element_classes_direct_effects.tsv.gz",
-           dataset = config["crispr_benchmark_files"])
-
-# combine positive hit rates of held-out and training datasets
-rule combine_positive_hit_rates:
-  input:
-    cis_rates_heldout = expand("results/{sample}/cis_positive_rate.tsv", sample = config["datasets"]),
-    trans_rates_heldout = expand("results/{sample}/trans_positive_rate.tsv", sample = config["datasets"]),
-    cis_rates_training = config["training_dir"] + "/Gasperini2019/trans_effects/cis_positive_rate_0.13gStd_MAST_perCRE_GRCh38.tsv",
-    trans_rates_training = config["training_dir"] + "/Gasperini2019/trans_effects/trans_positive_rate_0.13gStd_MAST_perCRE_GRCh38.tsv"
-  output:
-    cis_rates = "results/cis_positive_hit_rates.tsv",
-    trans_rates = "results/trans_positive_hit_rates.tsv"
-  conda: "sceptre"
-  script:
-    "scripts/combine_positive_hit_rates.R"
+    expand("results/{project}_analyses/model_indirect_effects.html", project = config["dataset_lists"]),
+    expand("results/{project}_analyses/{type}_positive_hit_rates.tsv", type = ["cis", "trans"],
+           project = config["dataset_lists"]),
+    expand("results/annotated_crispr_data_encode/EPCrisprBenchmark_{dataset}_element_classes_direct_effects.tsv.gz",
+           dataset = ["combined_training", "combined_heldout"]),
+    "results/annotated_crispr_data_dctap/Final_DC_TAP_Seq_Results_w_Chromatin_Categories_on_resized_and_merged_elements_fdr20_direct_effects.tsv"

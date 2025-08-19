@@ -98,7 +98,7 @@ fwrite(genes_per_pert, file = snakemake@output$genes_per_pert, quote = FALSE, na
 
 # Performing differential expression tests ---------------------------------------------------------
 
-message("\nRunning sceptre sceptre:\n")
+message("\nRunning sceptre:\n")
 
 # set analysis parameters
 sceptre_object <- set_analysis_parameters(

@@ -1,6 +1,18 @@
 ## Perform differential expression tests for trans-acting interactions to compute expected rate
 ## of indirect effects for held-out CRISPR datasets
 
+# annotate cis results for DC-TAP-seq datasets using the 20% FDR cutoff used in the paper
+rule annotate_cis_results_dctap_fdr20:
+  input: lambda wildcards: config["datasets"][wildcards.sample]["results"]
+  output: "results/{sample}/annotated_cis_results.tsv.gz"
+  params:
+    valid_col = "Random_DistalElement_Gene"
+  wildcard_constraints:
+    sample = "K562_DC_TAPseq_FDR20|WTC11_DC_TAPseq_FDR20"
+  conda: "sceptre"
+  script:
+    "../scripts/annotate_cis_results_dctap_fdr20.R"
+
 # annotate cis results for DC-TAP-seq datasets
 rule annotate_cis_results_dctap:
   input: 
@@ -83,3 +95,17 @@ rule analyze_indirect_effects:
     runtime = "6h"
   script:
     "../scripts/analyze_indirect_effects.Rmd"
+    
+# combine positive hit rates of held-out and training datasets
+rule combine_positive_hit_rates:
+  input:
+    cis_rates_heldout = lambda wildcards: expand("results/{sample}/cis_positive_rate.tsv", sample = config["dataset_lists"][wildcards.project]),
+    trans_rates_heldout = lambda wildcards: expand("results/{sample}/trans_positive_rate.tsv", sample = config["dataset_lists"][wildcards.project]),
+    cis_rates_training = config["training_dir"] + "/Gasperini2019/trans_effects/cis_positive_rate_0.13gStd_MAST_perCRE_GRCh38.tsv",
+    trans_rates_training = config["training_dir"] + "/Gasperini2019/trans_effects/trans_positive_rate_0.13gStd_MAST_perCRE_GRCh38.tsv"
+  output:
+    cis_rates = "results/{project}_analyses/cis_positive_hit_rates.tsv",
+    trans_rates = "results/{project}_analyses/trans_positive_hit_rates.tsv"
+  conda: "sceptre"
+  script:
+    "../scripts/combine_positive_hit_rates.R"    
